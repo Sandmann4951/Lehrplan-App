@@ -1,0 +1,21 @@
+# Unterrichtsassistent – lokaler Pilot
+# Start:  cp .env.example .env && docker compose up -d --build
+services:
+  app:
+    build: .
+    image: unterrichtsassistent-pilot:0.1.0
+    container_name: unterrichtsassistent
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATA_DIR: /data
+      TZ: Europe/Berlin
+    ports:
+      # Standard: nur lokal erreichbar. LAN-Modus: BIND_ADDRESS=0.0.0.0 und TLS aktivieren (siehe docs/BETRIEB.md)
+      - "${BIND_ADDRESS:-127.0.0.1}:${HOST_PORT:-8000}:8000"
+    volumes:
+      - lehrplan-data:/data
+      - ./certs:/certs:ro
+
+volumes:
+  lehrplan-data:
