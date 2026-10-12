@@ -1,0 +1,817 @@
+<title>Unterrichtsassistent Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: Heft-Optik – App-Leiste oben, Inhalt in einer Spalte, auf breiten Schirmen zweispaltig. Blau wie Schulheft-Lineatur, Gelb wie Textmarker. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #eaeef4;
+  --fg: #1b2433;
+  --muted: #5a6577;
+  --line: #d3dae5;
+  --accent: #2456a6;
+  --accent-fg: #ffffff;
+  --accent-soft: #e2ebf8;
+  --mark: #ffe58a;
+  --ok: #1f6b3d; --ok-soft: #e1f2e7;
+  --warn: #8a5400; --warn-soft: #fff1d6;
+  --err: #a12a2a; --err-soft: #fbe5e5;
+  --demo: #6b3fa0; --demo-soft: #efe6fa;
+  --ruling: #c9d6ec;
+  --font-ui: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sheet: "Andika", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --radius: 10px;
+  --touch: 44px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161e; --surface: #1b212c; --surface-2: #242c39; --fg: #e8ecf3; --muted: #a2adbe; --line: #343e4e;
+  --accent: #7fa8ec; --accent-fg: #0d1626; --accent-soft: #22334f; --mark: #6b5a10;
+  --ok: #7fd39b; --ok-soft: #1c3527; --warn: #f0c070; --warn-soft: #3a2d14; --err: #f29b9b; --err-soft: #3d1f1f;
+  --demo: #c9a6f2; --demo-soft: #30264a; --ruling: #33435e; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #12161e; --surface: #1b212c; --surface-2: #242c39; --fg: #e8ecf3; --muted: #a2adbe; --line: #343e4e;
+  --accent: #7fa8ec; --accent-fg: #0d1626; --accent-soft: #22334f; --mark: #6b5a10;
+  --ok: #7fd39b; --ok-soft: #1c3527; --warn: #f0c070; --warn-soft: #3a2d14; --err: #f29b9b; --err-soft: #3d1f1f;
+  --demo: #c9a6f2; --demo-soft: #30264a; --ruling: #33435e; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--fg); }
+body { font-family: var(--font-ui); font-size: 16px; line-height: 1.5; }
+h1, h2, h3 { line-height: 1.25; text-wrap: balance; margin: 0; }
+h1 { font-size: 1.55rem; }
+h2 { font-size: 1.2rem; }
+h3 { font-size: 1.05rem; }
+p { margin: 0; }
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--accent); color: var(--accent-fg); }
+.bar-in { max-width: 1180px; margin: 0 auto; padding: 6px 16px; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.brand { font-weight: 700; display: flex; align-items: center; gap: 8px; min-height: var(--touch); }
+.sim { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 99px; padding: 1px 8px; opacity: .9; }
+.nav { display: flex; flex-wrap: wrap; gap: 2px; margin-left: auto; }
+.nav button { background: transparent; border: 0; color: inherit; min-height: var(--touch); padding: 0 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.nav button[aria-current="page"] { background: color-mix(in srgb, var(--accent-fg) 22%, transparent); text-decoration: underline; text-underline-offset: 4px; }
+.nav button:hover { background: color-mix(in srgb, var(--accent-fg) 14%, transparent); }
+
+@media (max-width: 700px) { .bar { position: static; } .nav { flex-wrap: nowrap; overflow-x: auto; width: 100%; margin-left: 0; -webkit-overflow-scrolling: touch; } .nav button { white-space: nowrap; } }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 60px; display: flex; flex-direction: column; gap: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.between { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.grid2 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+@media (min-width: 900px) { .grid2 { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } .lib { grid-template-columns: 260px minmax(0,1fr) !important; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; min-width: 0; }
+.muted { color: var(--muted); }
+.small { font-size: .875rem; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--touch); min-width: var(--touch); padding: 6px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; text-decoration: none; color: var(--fg); }
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--accent); }
+.btn.danger { color: var(--err); border-color: transparent; background: transparent; }
+.btn.on { background: var(--mark); border-color: var(--warn); color: var(--fg); }
+input, select, textarea { min-height: var(--touch); padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); width: 100%; max-width: 100%; font-size: 16px; }
+textarea { min-height: 120px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; }
+input[type="checkbox"] { width: 22px; height: 22px; min-height: 0; accent-color: var(--accent); flex: none; }
+label.f { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-weight: 600; font-size: .92rem; }
+label.chk { display: flex; align-items: center; gap: 10px; min-height: 40px; cursor: pointer; font-weight: 400; }
+.fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; align-items: end; }
+
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 9px; border-radius: 99px; font-size: .8rem; border: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
+.pill.info { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.pill.warn { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+.pill.ok { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+.pill.demo { background: var(--demo-soft); border-color: transparent; color: var(--demo); }
+.note { display: flex; gap: 10px; padding: 10px 12px; border-radius: 8px; }
+.note.info { background: var(--accent-soft); }
+.note.warn { background: var(--warn-soft); }
+.note.err { background: var(--err-soft); }
+.note.ok { background: var(--ok-soft); }
+.note b.ic { flex: none; }
+
+.week { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.kw { font-weight: 700; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.unit { border-left: 5px solid var(--accent); }
+.unit.done { border-left-color: var(--ok); }
+.unit.started { border-left-color: var(--warn); }
+.subj { font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.status { font-weight: 700; font-size: .875rem; white-space: nowrap; }
+.reason { color: var(--accent); font-size: .875rem; }
+.score { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+.storage { display: flex; gap: 8px; align-items: center; font-size: .85rem; padding: 6px 10px; border-radius: 8px; background: var(--surface-2); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--warn); flex: none; }
+.dot.ok { background: var(--ok); }
+
+.weeklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.weeklist > li.free { background: var(--surface-2); }
+.weeklist > li.now { border: 2px solid var(--accent); }
+
+.entry { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 48px; display: flex; flex-direction: column; gap: 18px; }
+.entry h1 { font-size: 1.9rem; }
+.acc { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+.acc button { text-align: left; padding: 16px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: flex; flex-direction: column; gap: 4px; min-height: 88px; }
+.acc button:hover { border-color: var(--accent); }
+
+.overlay { position: fixed; inset: 0; background: rgba(10,15,25,.5); z-index: 30; display: flex; align-items: flex-end; justify-content: center; padding: 12px; }
+@media (min-width: 640px) { .overlay { align-items: center; } }
+.modal { background: var(--surface); color: var(--fg); border-radius: 12px; width: min(560px, 100%); max-height: calc(100% - 24px); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Arbeitsblatt: Heftlineatur, Andika (Fibelschrift-nah) */
+.sheet { background: #fffefb; color: #161616; border: 1px solid var(--line); border-radius: 6px; padding: 24px 22px; font-family: var(--font-sheet); font-size: 1.15rem; line-height: 1.6; display: flex; flex-direction: column; gap: 18px; max-width: 760px; }
+.sheet h2 { font-family: var(--font-sheet); font-size: 1.6rem; }
+.sheet .meta { font-family: var(--font-ui); font-size: .8rem; color: #555; }
+.sheet .namebox { display: flex; gap: 16px; flex-wrap: wrap; font-size: 1rem; }
+.sheet .namebox span { flex: 1 1 200px; border-bottom: 1.5px solid #333; padding-bottom: 2px; }
+.sheet .task { border: 2px solid #222; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.sheet .task-h { display: flex; justify-content: space-between; font-weight: 700; }
+.sheet .stars { letter-spacing: 2px; }
+.sheet .items { display: flex; flex-wrap: wrap; gap: 14px 22px; }
+.sheet .item { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 70px; }
+.sheet .pic { font-size: 2.2rem; line-height: 1; }
+.sheet .box { display: inline-flex; width: 46px; height: 46px; border: 2px solid #222; border-radius: 4px; align-items: center; justify-content: center; font-weight: 700; font-size: 1.4rem; }
+.sheet .lines { height: 44px; background: linear-gradient(#222,#222) bottom/100% 1.5px no-repeat, repeating-linear-gradient(90deg,#999 0 4px,transparent 4px 8px) 0 50%/100% 1px no-repeat, linear-gradient(#999,#999) top/100% 1px no-repeat; }
+.sheet .sol { color: #1d4ea0; font-weight: 700; }
+.sheet .foot { font-family: var(--font-ui); font-size: .72rem; color: #666; border-top: 1px solid #ccc; padding-top: 6px; }
+.sheet ul { margin: 0; padding-left: 22px; }
+.dots { display: inline-grid; grid-template-columns: repeat(5, 14px); gap: 5px; }
+.dots i { width: 14px; height: 14px; border-radius: 50%; background: #222; display: block; }
+
+.tablewrap { overflow-x: auto; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div id="root"><p style="padding:24px">Demo wird geladen …</p></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
+<script>
+"use strict";
+const SEED = __SEED__;
+const SCHEMA_VERSION = 1;
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+const html = htm.bind(React.createElement);
+
+/* ---------------- Fiktive Demo-Konten (Simulation, keine Passwörter) ---------------- */
+const ACCOUNTS = [
+  { id: "demo-lehrkraft-a", name: "Frau Sonnenberg", note: "Klassenleitung 1a (fiktiv)" },
+  { id: "demo-lehrkraft-b", name: "Herr Lindner", note: "Klassenleitung 1b (fiktiv)" },
+];
+const ACCOUNT_IDS = new Set(ACCOUNTS.map(a => a.id));
+
+const TYPE_LABEL = { worksheet: "Arbeitsblatt", lesson_plan: "Unterrichtsplan", assessment: "Lernstandskontrolle" };
+const LEVEL_LABEL = { basis: "Basis", standard: "Standard", erweitert: "Erweitert", differenziert: "Differenziert (3 Niveaus)" };
+const STATUS = { planned: ["○", "Geplant"], started: ["◐", "Begonnen"], completed: ["●", "Abgeschlossen"] };
+const byId = (list) => Object.fromEntries(list.map(x => [x.id, x]));
+const TOPICS = byId(SEED.topics), MATERIALS = byId(SEED.materials), SUBJECTS = byId(SEED.subjects), CURR = byId(SEED.curriculum);
+
+/* ---------------- Datum / Kalender (gleiche Regeln wie Pilot, F05) ---------------- */
+const P = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+const F = (d) => d.toISOString().slice(0, 10);
+const addDays = (s, n) => { const d = P(s); d.setUTCDate(d.getUTCDate() + n); return F(d); };
+const wd = (s) => (P(s).getUTCDay() + 6) % 7;
+const monday = (s) => addDays(s, -wd(s));
+const todayBerlin = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(new Date());
+const fmt = (s, y = true) => new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", ...(y ? { year: "numeric" } : {}), timeZone: "UTC" }).format(P(s));
+function isoWeek(s) {
+  const d = P(s); const day = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - day + 3);
+  const year = d.getUTCFullYear(); const jan4 = new Date(Date.UTC(year, 0, 4));
+  return { year, week: 1 + Math.round(((d - jan4) / 86400000 - 3 + ((jan4.getUTCDay() + 6) % 7)) / 7) };
+}
+const YEAR = SEED.school_year;
+const CLOSED = SEED.closures.map(c => [c.starts_on, c.ends_on]);
+const isClosed = (s) => CLOSED.some(([a, b]) => a <= s && s <= b);
+const isTeaching = (s, cls) => s >= YEAR.starts_on && s <= YEAR.ends_on && cls.weekdays.includes(wd(s)) && !isClosed(s);
+const teachingDays = (m, cls) => [0,1,2,3,4,5,6].map(i => addDays(m, i)).filter(d => isTeaching(d, cls));
+function weekNumbers(cls) {
+  const out = {}; let n = 0;
+  for (let w = monday(YEAR.starts_on); w <= monday(YEAR.ends_on); w = addDays(w, 7)) if (teachingDays(w, cls).length) out[w] = ++n;
+  return out;
+}
+function weekInfo(m, cls, nums) {
+  const end = addDays(m, 6); const inYear = !(end < YEAR.starts_on || m > YEAR.ends_on);
+  const days = inYear ? teachingDays(m, cls) : []; const regular = cls.weekdays.length;
+  const closures = SEED.closures.filter(c => !(c.ends_on < m || c.starts_on > end));
+  return { start: m, end, iso: isoWeek(m), inYear, number: inYear ? (nums[m] ?? null) : null, days, regular,
+    shortened: inYear && days.length > 0 && days.length < regular, free: inYear && days.length === 0, closures,
+    cap: (h) => regular ? Math.floor(h * days.length / regular) : 0 };
+}
+
+/* ---------------- Planung (F06) ---------------- */
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "u" + Date.now() + Math.random().toString(16).slice(2));
+function initPlan(cls) {
+  const nums = weekNumbers(cls); const weeks = Object.keys(nums).sort(); const units = [];
+  for (const tpl of SEED.templates) {
+    const hours = cls.hours[tpl.subject_id] ?? 0;
+    const caps = weeks.map(w => [w, weekInfo(w, cls, nums).cap(hours)]);
+    let i = 0, used = 0, seq = 0;
+    for (const tid of tpl.topics) {
+      let rest = TOPICS[tid].estimated_lessons;
+      while (rest > 0) {
+        while (i < caps.length && caps[i][1] - used <= 0) { i++; used = 0; }
+        if (i >= caps.length) break;
+        const take = Math.min(rest, caps[i][1] - used);
+        const mats = SEED.materials.filter(m => m.topic_id === tid).map(m => m.id);
+        units.push({ id: uid(), class_id: cls.id, subject_id: tpl.subject_id, topic_id: tid, week_start_date: caps[i][0],
+          planned_lessons: take, status: "planned", notes: "", sequence: ++seq, material_ids: mats, curriculum_ids: [...TOPICS[tid].curriculum_ids], version: 1 });
+        used += take; rest -= take;
+      }
+    }
+  }
+  return units;
+}
+function warningsFor(cls, units, subjectId, week, lessons, excludeId) {
+  const info = weekInfo(week, cls, weekNumbers(cls));
+  if (!info.inYear) return ["Die Zielwoche liegt außerhalb des Schuljahrs."];
+  if (info.free) return ["Die Zielwoche ist vollständig unterrichtsfrei (Ferien oder schulfreie Tage)."];
+  const cap = info.cap(cls.hours[subjectId] ?? 0);
+  const used = units.filter(u => u.class_id === cls.id && u.subject_id === subjectId && u.week_start_date === week && u.id !== excludeId).reduce((a, u) => a + u.planned_lessons, 0);
+  return used + lessons > cap ? [`Überplanung: ${used + lessons} Stunden bei einer Kapazität von ${cap} Stunden in dieser Woche.`] : [];
+}
+
+/* ---------------- Empfehlungen (F07): 100 Thema, +20 Kompetenz, +5 Niveau ---------------- */
+function scoreTopic(tid, comps, level) {
+  return SEED.materials.filter(m => m.topic_id === tid && m.status === "released").map(m => {
+    let score = 100; const r = [`Thema „${TOPICS[tid].title}“ ist eingeplant (+100)`];
+    const shared = m.curriculum_ids.filter(c => comps.has(c));
+    if (shared.length) { score += 20; r.push(`gemeinsamer Kompetenzbezug ${shared.map(c => CURR[c].section_code).sort().join(", ")} (+20)`); }
+    if (level && m.level === level) { score += 5; r.push(`Niveau ${LEVEL_LABEL[level]} (+5)`); }
+    return { m, score, reason: r.join("; ") };
+  });
+}
+const sortRec = (a, b) => b.score - a.score || a.m.title.localeCompare(b.m.title, "de") || (a.m.id < b.m.id ? -1 : 1);
+function recommend(cls, units, week, level) {
+  const mine = units.filter(u => u.class_id === cls.id).sort((a, b) => a.week_start_date.localeCompare(b.week_start_date) || a.sequence - b.sequence);
+  return SEED.subjects.map(s => {
+    const wu = mine.filter(u => u.subject_id === s.id && u.week_start_date === week);
+    if (wu.length) {
+      const comps = {}; wu.forEach(u => { (comps[u.topic_id] ||= new Set()); u.curriculum_ids.forEach(c => comps[u.topic_id].add(c)); });
+      const items = Object.keys(comps).flatMap(t => scoreTopic(t, comps[t], level)).sort(sortRec).slice(0, 5);
+      return { s, mode: "planned", items };
+    }
+    const open = mine.filter(u => u.subject_id === s.id && u.status !== "completed");
+    const next = open.find(u => u.week_start_date > week) ?? open[0];
+    if (!next) return { s, mode: "empty", items: [] };
+    const items = scoreTopic(next.topic_id, new Set(next.curriculum_ids), level).sort(sortRec).slice(0, 5);
+    return { s, mode: "next", next, items };
+  });
+}
+
+/* ---------------- Datenzugriffsschicht (austauschbar) ----------------
+   Gleiche Schnittstelle wie eine spätere REST-Anbindung: load() / save(state).
+   1) Persönlicher Artifact-Speicher (db, privat je Person)  2) Fallback: nur diese Sitzung. */
+const emptyState = () => ({ schema_version: SCHEMA_VERSION, classes: [], units: [], favorites: [] });
+function sessionStore() {
+  let mem = emptyState();
+  return { mode: "session", label: "Nur diese Sitzung – Daten gehen beim Neuladen verloren", load: async () => mem, save: async (s) => { mem = s; } };
+}
+async function createStore() {
+  try {
+    if (!window.claude?.use) return sessionStore();
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    if (!db || !user) return sessionStore();
+    const id = await user.id();
+    if (!id) return sessionStore();
+    const ref = db.doc("data/users/" + id + "/demo-state");
+    const snap = await ref.get();
+    return {
+      mode: "personal", label: "Persönlicher Speicher in Claude – bleibt nach Neuladen erhalten, nur für Sie sichtbar",
+      load: async () => (snap.exists ? JSON.parse(JSON.stringify(snap.data())) : emptyState()),
+      save: async (s) => { await ref.set(s); },
+    };
+  } catch (e) { return sessionStore(); }
+}
+
+/* ---------------- JSON-Export / validierter Import ---------------- */
+function exportJson(state) {
+  return JSON.stringify({ schema_version: SCHEMA_VERSION, exported_at: new Date().toISOString(),
+    topics: SEED.topics.map(({ key, estimated_lessons, ...t }) => t),
+    materials: SEED.materials.map(({ key, has_solution, ...m }) => m),
+    classes: state.classes, units: state.units, favorites: state.favorites }, null, 2);
+}
+const isDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && F(P(s)) === s;
+function validateImport(text) {
+  const errors = []; let data;
+  try { data = JSON.parse(text); } catch { return { errors: ["Kein gültiges JSON."] }; }
+  if (!data || typeof data !== "object" || Array.isArray(data)) return { errors: ["JSON-Objekt erwartet."] };
+  if (data.schema_version !== SCHEMA_VERSION) errors.push(`schema_version ${SCHEMA_VERSION} erwartet.`);
+  for (const k of ["topics", "materials", "classes", "units", "favorites"]) if (!Array.isArray(data[k])) errors.push(`„${k}“ muss eine Liste sein.`);
+  if (errors.length) return { errors };
+  for (const k of Object.keys(data)) if (/pass|token|secret/i.test(k)) errors.push(`Unzulässiges Feld „${k}“ (keine Passwörter oder Tokens).`);
+  data.topics.forEach((t, i) => { if (!TOPICS[t?.id]) errors.push(`topics.${i}: unbekannte Themen-ID.`); });
+  data.materials.forEach((m, i) => { if (!MATERIALS[m?.id]) errors.push(`materials.${i}: unbekannte Material-ID.`); });
+  const classIds = new Set(); const owners = {};
+  data.classes.forEach((c, i) => {
+    const p = `classes.${i}`;
+    if (typeof c?.id !== "string" || !c.id) errors.push(`${p}.id fehlt.`); else if (classIds.has(c.id)) errors.push(`${p}.id doppelt.`); else { classIds.add(c.id); owners[c.id] = c.owner_id; }
+    if (!ACCOUNT_IDS.has(c?.owner_id)) errors.push(`${p}.owner_id ist kein Demo-Konto.`);
+    if (typeof c?.name !== "string" || !c.name.trim()) errors.push(`${p}.name fehlt.`);
+    if (!Array.isArray(c?.weekdays) || !c.weekdays.length || c.weekdays.some(d => !Number.isInteger(d) || d < 0 || d > 6)) errors.push(`${p}.weekdays ungültig (0–6, mindestens ein Tag).`);
+    if (!c?.hours || typeof c.hours !== "object" || Object.entries(c.hours).some(([s, h]) => !SUBJECTS[s] || !Number.isInteger(h) || h < 0)) errors.push(`${p}.hours ungültig.`);
+  });
+  data.units.forEach((u, i) => {
+    const p = `units.${i}`;
+    if (typeof u?.id !== "string" || !u.id) errors.push(`${p}.id fehlt.`);
+    if (!classIds.has(u?.class_id)) errors.push(`${p}.class_id verweist auf keine Klasse im Import.`);
+    if (!TOPICS[u?.topic_id]) errors.push(`${p}.topic_id unbekannt.`);
+    else if (TOPICS[u.topic_id].subject_id !== u.subject_id) errors.push(`${p}: Fach passt nicht zum Thema.`);
+    if (!isDate(u?.week_start_date) || wd(u.week_start_date) !== 0) errors.push(`${p}.week_start_date muss ein Montag (JJJJ-MM-TT) sein.`);
+    if (!Number.isInteger(u?.planned_lessons) || u.planned_lessons < 1) errors.push(`${p}.planned_lessons muss eine positive ganze Zahl sein.`);
+    if (!STATUS[u?.status]) errors.push(`${p}.status ungültig.`);
+    if (!Array.isArray(u?.material_ids) || u.material_ids.some(m => !MATERIALS[m])) errors.push(`${p}.material_ids enthält unbekannte IDs.`);
+    if (!Array.isArray(u?.curriculum_ids) || u.curriculum_ids.some(c => !CURR[c])) errors.push(`${p}.curriculum_ids enthält unbekannte IDs.`);
+  });
+  data.favorites.forEach((f, i) => {
+    if (!ACCOUNT_IDS.has(f?.owner_id)) errors.push(`favorites.${i}.owner_id ist kein Demo-Konto.`);
+    if (!MATERIALS[f?.material_id]) errors.push(`favorites.${i}.material_id unbekannt.`);
+  });
+  if (errors.length) return { errors };
+  return { errors: [], state: { schema_version: SCHEMA_VERSION,
+    classes: data.classes.map(c => ({ id: c.id, owner_id: c.owner_id, name: c.name.trim(), school_year_id: YEAR.id, weekdays: [...new Set(c.weekdays)].sort(), hours: c.hours })),
+    units: data.units.map(u => ({ ...u, notes: String(u.notes ?? ""), sequence: Number(u.sequence) || 0, version: Number(u.version) || 1 })),
+    favorites: data.favorites.map(f => ({ owner_id: f.owner_id, material_id: f.material_id })) } };
+}
+
+/* ---------------- Kleine UI-Bausteine ---------------- */
+const Pill = ({ k = "", children, title }) => html`<span class=${"pill " + k} title=${title}>${children}</span>`;
+const Note = ({ k = "info", children }) => html`<div class=${"note " + k} role=${k === "err" ? "alert" : "status"}><b class="ic" aria-hidden="true">${{ info: "ℹ", warn: "⚠", err: "✖", ok: "✔" }[k]}</b><div class="stack">${children}</div></div>`;
+const StatusBadge = ({ s }) => html`<span class="status" style=${{ color: s === "completed" ? "var(--ok)" : s === "started" ? "var(--warn)" : "var(--muted)" }}><span aria-hidden="true">${STATUS[s][0]}</span> ${STATUS[s][1]}</span>`;
+const DemoPill = () => html`<${Pill} k="demo">Demo · nicht fachlich geprüft</${Pill}>`;
+
+function WeekHead({ w }) {
+  return html`<div class="stack" style=${{ gap: "4px" }}>
+    <div class="week"><span class="kw">KW ${w.iso.week}</span><span>${fmt(w.start, false)}–${fmt(w.end)}</span>
+      ${w.number ? html`<${Pill} k="info">Unterrichtswoche ${w.number}</${Pill}>` : null}
+      ${!w.inYear ? html`<${Pill}>außerhalb des Schuljahrs</${Pill}>` : null}
+      ${w.free ? html`<${Pill} k="warn">unterrichtsfrei</${Pill}>` : null}
+      ${w.shortened ? html`<${Pill} k="warn">verkürzt · ${w.days.length} von ${w.regular} Tagen</${Pill}>` : null}</div>
+    ${w.closures.length ? html`<p class="small muted">${w.closures.map(c => c.title + " (ungeprüft)").join(", ")}</p>` : null}
+  </div>`;
+}
+
+function WeekNav({ week, setWeek }) {
+  return html`<div class="row" role="group" aria-label="Woche wählen">
+    <button class="btn" onClick=${() => setWeek(addDays(week, -7))} aria-label="Vorherige Woche">‹ Vorwoche</button>
+    <input type="date" id="wk" aria-label="Datum innerhalb der Woche" style=${{ width: "auto", flex: "1 1 150px", maxWidth: "200px" }} value=${week} onChange=${e => e.target.value && setWeek(monday(e.target.value))} />
+    <button class="btn" onClick=${() => setWeek(addDays(week, 7))} aria-label="Nächste Woche">Nächste ›</button>
+    <button class="btn ghost" onClick=${() => setWeek(monday(todayBerlin()))}>Heute</button>
+  </div>`;
+}
+
+function MaterialCard({ m, reason, score, fav, toggleFav, open }) {
+  return html`<article class="card stack" style=${{ gap: "6px" }}>
+    <div class="between"><h3><a href="#" onClick=${e => { e.preventDefault(); open(m.id); }}>${m.title}</a></h3>
+      <button class=${"btn" + (fav ? " on" : "")} aria-pressed=${fav} onClick=${() => toggleFav(m.id)}><span aria-hidden="true">${fav ? "★" : "☆"}</span> ${fav ? "Gemerkt" : "Merken"}</button></div>
+    <div class="row"><${Pill}>${TYPE_LABEL[m.type]}</${Pill}><${Pill}>${LEVEL_LABEL[m.level]}</${Pill}><${Pill}>${m.duration_minutes} Min.</${Pill}><${DemoPill} /></div>
+    <p class="small muted">Thema: ${TOPICS[m.topic_id].title}</p>
+    ${reason ? html`<p class="reason">Begründung: ${reason} = <span class="score">${score} Punkte</span></p>` : null}
+    <p class="small">${m.has_solution ? "✔ Lösung vorhanden" : "– keine Lösung / Auswertungshilfe"}</p>
+  </article>`;
+}
+
+/* ---------------- Einheit bearbeiten / verschieben ---------------- */
+function UnitModal({ cls, units, unit, defaultWeek, moveOnly, onSave, onDelete, onClose }) {
+  const isNew = !unit;
+  const [d, setD] = useState(() => unit ? { ...unit } : { id: uid(), class_id: cls.id, subject_id: SEED.subjects[0].id, topic_id: SEED.topics.find(t => t.subject_id === SEED.subjects[0].id).id,
+    week_start_date: defaultWeek, planned_lessons: 1, status: "planned", notes: "", sequence: 0, material_ids: [], curriculum_ids: [], version: 1 });
+  const [warn, setWarn] = useState(null); const [conf, setConf] = useState(false);
+  const dateRef = useRef(null);
+  useEffect(() => { (moveOnly ? dateRef.current : null)?.focus(); const k = e => e.key === "Escape" && onClose(); window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
+  const set = (p) => { setD({ ...d, ...p }); setWarn(null); };
+  const topics = SEED.topics.filter(t => t.subject_id === d.subject_id);
+  const mats = SEED.materials.filter(m => m.topic_id === d.topic_id);
+  const save = (force) => {
+    const week = monday(d.week_start_date);
+    const unchanged = unit && unit.week_start_date === week && unit.planned_lessons >= d.planned_lessons;
+    const w = unchanged ? [] : warningsFor(cls, units, d.subject_id, week, d.planned_lessons, d.id);
+    if (w.length && !force) { setWarn(w); return; }
+    onSave({ ...d, week_start_date: week });
+  };
+  const toggle = (k, id) => set({ [k]: d[k].includes(id) ? d[k].filter(x => x !== id) : [...d[k], id] });
+  return html`<div class="overlay" onClick=${e => e.target === e.currentTarget && onClose()}>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+      <div class="between"><h2 id="mt">${isNew ? "Einheit hinzufügen" : moveOnly ? "Einheit verschieben" : "Einheit bearbeiten"}</h2>
+        <button class="btn ghost" onClick=${onClose} aria-label="Schließen">✕</button></div>
+      ${warn ? html`<${Note} k="warn">${warn.map(x => html`<p key=${x}>${x}</p>`)}<p>Sie entscheiden, ob trotzdem gespeichert wird.</p></${Note}>` : null}
+      <div class="fgrid">
+        <label class="f">Fach<select id="u-subj" disabled=${!isNew} value=${d.subject_id} onChange=${e => { const t = SEED.topics.find(x => x.subject_id === e.target.value); set({ subject_id: e.target.value, topic_id: t.id, material_ids: [], curriculum_ids: [] }); }}>
+          ${SEED.subjects.map(s => html`<option key=${s.id} value=${s.id}>${s.title}</option>`)}</select></label>
+        <label class="f">Thema<select id="u-topic" value=${d.topic_id} onChange=${e => set({ topic_id: e.target.value, material_ids: [] })}>
+          ${topics.map(t => html`<option key=${t.id} value=${t.id}>${t.title}</option>`)}</select></label>
+        <label class="f">Woche (beliebiges Datum)<input id="u-week" ref=${dateRef} type="date" value=${d.week_start_date} onChange=${e => e.target.value && set({ week_start_date: e.target.value })} />
+          <span class="small muted" style=${{ fontWeight: 400 }}>Woche ab Montag, ${fmt(monday(d.week_start_date))}</span></label>
+        <label class="f">Stunden (à 45 Min.)<input id="u-les" type="number" min="1" max="60" inputMode="numeric" value=${d.planned_lessons} onChange=${e => set({ planned_lessons: Math.max(1, parseInt(e.target.value) || 1) })} /></label>
+        <label class="f">Status<select id="u-stat" value=${d.status} onChange=${e => set({ status: e.target.value })}>
+          ${Object.entries(STATUS).map(([k, v]) => html`<option key=${k} value=${k}>${v[1]}</option>`)}</select></label>
+      </div>
+      ${!moveOnly ? html`
+        <label class="f">Notizen (z. B. Lehrwerk, Buchstabenfolge)<textarea id="u-notes" style=${{ fontFamily: "inherit", fontSize: "16px", minHeight: "70px" }} value=${d.notes} onChange=${e => set({ notes: e.target.value })}></textarea></label>
+        <fieldset class="card" style=${{ padding: "8px 12px" }}><legend class="small"><b>Verknüpfte Materialien</b></legend>
+          ${mats.length ? mats.map(m => html`<label key=${m.id} class="chk"><input type="checkbox" checked=${d.material_ids.includes(m.id)} onChange=${() => toggle("material_ids", m.id)} /><span>${m.title} <span class="muted small">· ${TYPE_LABEL[m.type]}</span></span></label>`) : html`<p class="small muted">Für dieses Thema gibt es noch kein freigegebenes Material.</p>`}</fieldset>
+        <fieldset class="card" style=${{ padding: "8px 12px" }}><legend class="small"><b>Kompetenzbezüge (LehrplanPLUS 1/2, ungeprüft)</b></legend>
+          ${SEED.curriculum.filter(c => c.subject_id === d.subject_id).map(c => html`<label key=${c.id} class="chk"><input type="checkbox" checked=${d.curriculum_ids.includes(c.id)} onChange=${() => toggle("curriculum_ids", c.id)} /><span><b>${c.section_code}</b> ${c.section_title}</span></label>`)}</fieldset>` : null}
+      <div class="row">
+        ${!isNew && onDelete ? (conf ? html`<button class="btn danger" onClick=${() => onDelete(d.id)}>Wirklich löschen</button>` : html`<button class="btn danger" onClick=${() => setConf(true)}>Löschen</button>`) : null}
+        <span style=${{ flex: 1 }}></span>
+        <button class="btn ghost" onClick=${onClose}>Abbrechen</button>
+        ${warn ? html`<button class="btn primary" onClick=${() => save(true)}>Trotzdem speichern</button>` : html`<button class="btn primary" onClick=${() => save(false)}>Speichern</button>`}
+      </div>
+    </div></div>`;
+}
+
+function UnitCard({ u, onStatus, onEdit, onMove, openMat }) {
+  return html`<article class=${"card unit stack " + (u.status === "completed" ? "done" : u.status === "started" ? "started" : "")} style=${{ gap: "6px" }}>
+    <div class="between"><div><p class="subj">${SUBJECTS[u.subject_id].title}</p><h3>${TOPICS[u.topic_id].title}</h3></div><${StatusBadge} s=${u.status} /></div>
+    <p class="small muted">${u.planned_lessons} ${u.planned_lessons === 1 ? "Stunde" : "Stunden"}${u.curriculum_ids.length ? " · Kompetenzbezug: " + u.curriculum_ids.map(c => CURR[c].section_code).join(", ") : ""}</p>
+    ${u.notes ? html`<p class="small" style=${{ background: "var(--surface-2)", padding: "6px 8px", borderRadius: "6px", whiteSpace: "pre-wrap" }}>${u.notes}</p>` : null}
+    ${u.material_ids.length ? html`<ul style=${{ margin: 0, paddingLeft: "20px" }}>${u.material_ids.map(id => html`<li key=${id}><a href="#" onClick=${e => { e.preventDefault(); openMat(id); }}>${MATERIALS[id].title}</a> <span class="small muted">· ${TYPE_LABEL[MATERIALS[id].type]}</span></li>`)}</ul>` : html`<p class="small" style=${{ color: "var(--warn)" }}>⚠ Noch kein Material verknüpft.</p>`}
+    <div class="row">
+      ${u.status === "planned" ? html`<button class="btn" onClick=${() => onStatus(u, "started")}>Begonnen</button>` : null}
+      ${u.status !== "completed" ? html`<button class="btn primary" onClick=${() => onStatus(u, "completed")}>✔ Abschließen</button>` : html`<button class="btn" onClick=${() => onStatus(u, "started")}>Wieder öffnen</button>`}
+      <button class="btn" onClick=${() => onMove(u)}>Verschieben</button>
+      <button class="btn ghost" onClick=${() => onEdit(u)}>Bearbeiten</button>
+    </div></article>`;
+}
+
+/* ---------------- Seiten ---------------- */
+function Dashboard({ ctx }) {
+  const { cls, units, week, setWeek, favs, toggleFav, openMat, setModal, updateUnit, go } = ctx;
+  const [level, setLevel] = useState("");
+  const nums = useMemo(() => (cls ? weekNumbers(cls) : {}), [cls]);
+  if (!cls) return html`<${NoClass} go=${go} />`;
+  const w = weekInfo(week, cls, nums);
+  const wu = units.filter(u => u.class_id === cls.id && u.week_start_date === week);
+  const hasUnits = units.some(u => u.class_id === cls.id);
+  const recs = recommend(cls, units, week, level || null);
+  return html`<div class="stack" style=${{ gap: "16px" }}>
+    <div class="between"><h1>Übersicht · ${cls.name}</h1><${ClassPicker} ctx=${ctx} /></div>
+    <${WeekNav} week=${week} setWeek=${setWeek} />
+    <${WeekHead} w=${w} />
+    <p class="small" style=${{ color: "var(--warn)" }}>⚠ Kalenderdaten 2026/27 sind ungeprüfte Vorbelegungen – nur zur Demonstration.</p>
+    ${!hasUnits ? html`<${Note}><p>Ihr Plan ist noch leer.</p><div><button class="btn primary" onClick=${() => setModal({ kind: "init" })}>Plan aus Vorlage anlegen</button></div></${Note}>` : null}
+    <div class="grid2">
+      <section class="stack" aria-labelledby="h-u">
+        <div class="between"><h2 id="h-u">Geplante Einheiten</h2><button class="btn" onClick=${() => setModal({ kind: "unit", defaultWeek: week })}>+ Einheit</button></div>
+        ${wu.length ? wu.map(u => html`<${UnitCard} key=${u.id} u=${u} openMat=${openMat} onStatus=${(u, s) => updateUnit({ ...u, status: s })} onEdit=${u => setModal({ kind: "unit", unit: u })} onMove=${u => setModal({ kind: "unit", unit: u, moveOnly: true })} />`)
+          : html`<div class="card"><p><b>${w.free ? "Unterrichtsfreie Woche." : "In dieser Woche ist nichts geplant."}</b></p><button class="btn ghost" onClick=${() => go("plan")}>Zum Wochenplan</button></div>`}
+        ${wu.length ? html`<p class="small muted">Kapazität: ${SEED.subjects.map(s => { const p = wu.filter(u => u.subject_id === s.id).reduce((a, u) => a + u.planned_lessons, 0); const c = w.cap(cls.hours[s.id] ?? 0); return `${s.title} ${p}/${c} Std.${p > c ? " ⚠ überplant" : ""}`; }).join(" · ")}</p>` : null}
+      </section>
+      <section class="stack" aria-labelledby="h-r">
+        <div class="between"><h2 id="h-r">Passende Materialien</h2>
+          <label class="row small" style=${{ fontWeight: 600 }}>Niveau<select id="lvl" style=${{ width: "auto" }} value=${level} onChange=${e => setLevel(e.target.value)}><option value="">beliebig</option>${Object.entries(LEVEL_LABEL).map(([k, v]) => html`<option key=${k} value=${k}>${v}</option>`)}</select></label></div>
+        ${recs.map(r => html`<div key=${r.s.id} class="stack"><h3>${r.s.title}</h3>
+          ${r.mode === "next" ? html`<${Note}>Vorschlag: In dieser Woche ist kein ${r.s.title}-Thema eingeplant. Nächstes offenes Thema im Plan: <b>${TOPICS[r.next.topic_id].title}</b> (ab ${fmt(r.next.week_start_date)}). Es wird nicht automatisch eingeplant.</${Note}>` : null}
+          ${r.items.length ? r.items.map(i => html`<${MaterialCard} key=${i.m.id} m=${i.m} reason=${i.reason} score=${i.score} fav=${favs.has(i.m.id)} toggleFav=${toggleFav} open=${openMat} />`)
+            : html`<div class="card"><p>${r.mode === "empty" ? "Für dieses Fach ist in Ihrem Plan keine offene Einheit vorhanden." : "Für das Thema ist noch kein freigegebenes Material vorhanden."}</p><button class="btn ghost" onClick=${() => go("lib")}>In der Bibliothek suchen</button></div>`}
+        </div>`)}
+      </section>
+    </div></div>`;
+}
+
+function PlanPage({ ctx }) {
+  const { cls, units, week, setModal, go } = ctx;
+  const [only, setOnly] = useState(false);
+  const nums = useMemo(() => (cls ? weekNumbers(cls) : {}), [cls]);
+  useEffect(() => { document.getElementById("w-" + week)?.scrollIntoView({ block: "start" }); }, []);
+  if (!cls) return html`<${NoClass} go=${go} />`;
+  const weeks = []; for (let w = monday(YEAR.starts_on); w <= monday(YEAR.ends_on); w = addDays(w, 7)) weeks.push(w);
+  const mine = units.filter(u => u.class_id === cls.id);
+  return html`<div class="stack">
+    <div class="between"><h1>Wochenplan · ${cls.name}</h1><${ClassPicker} ctx=${ctx} /></div>
+    <div class="row"><button class="btn primary" onClick=${() => setModal({ kind: "unit", defaultWeek: week })}>+ Einheit hinzufügen</button>
+      <button class="btn" onClick=${() => setModal({ kind: "init" })}>Plan aus Vorlage …</button>
+      <label class="chk"><input type="checkbox" checked=${only} onChange=${e => setOnly(e.target.checked)} /> Nur Wochen mit Einheiten</label></div>
+    <ol class="weeklist">${weeks.filter(w => !only || mine.some(u => u.week_start_date === w)).map(w => {
+      const info = weekInfo(w, cls, nums); const wu = mine.filter(u => u.week_start_date === w);
+      return html`<li key=${w} id=${"w-" + w} class=${"card stack " + (info.free ? "free " : "") + (w === monday(todayBerlin()) ? "now" : "")} style=${{ gap: "8px", scrollMarginTop: "70px" }}>
+        <${WeekHead} w=${info} />
+        ${wu.map(u => html`<div key=${u.id} class="between" style=${{ border: "1px solid var(--line)", borderRadius: "8px", padding: "8px 10px" }}>
+          <div style=${{ minWidth: 0 }}><span class="small muted">${SUBJECTS[u.subject_id].title}</span><br /><b>${TOPICS[u.topic_id].title}</b><br /><span class="small">${u.planned_lessons} Std. · <${StatusBadge} s=${u.status} />${u.material_ids.length ? "" : html`<span style=${{ color: "var(--warn)" }}> · kein Material</span>`}</span></div>
+          <div class="row"><button class="btn" onClick=${() => setModal({ kind: "unit", unit: u, moveOnly: true })}>Verschieben</button><button class="btn ghost" onClick=${() => setModal({ kind: "unit", unit: u })}>Bearbeiten</button></div></div>`)}
+        ${info.inYear && !info.free ? html`<p class="small muted row">${SEED.subjects.map(s => { const p = wu.filter(u => u.subject_id === s.id).reduce((a, u) => a + u.planned_lessons, 0); const c = info.cap(cls.hours[s.id] ?? 0); return `${s.title}: ${p}/${c}${p > c ? " ⚠" : ""}`; }).join(" · ")}
+          <button class="btn ghost" onClick=${() => setModal({ kind: "unit", defaultWeek: w })}>+ Einheit in dieser Woche</button></p>` : null}
+      </li>`; })}</ol></div>`;
+}
+
+function Library({ ctx }) {
+  const { favs, toggleFav, openMat } = ctx;
+  const [q, setQ] = useState(""); const [f, setF] = useState({ subject: [], topic: [], level: [], type: [] }); const [panel, setPanel] = useState(false); const [sort, setSort] = useState("relevance");
+  const tog = (k, v) => setF({ ...f, [k]: f[k].includes(v) ? f[k].filter(x => x !== v) : [...f[k], v] });
+  const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const rel = (m) => terms.reduce((a, t) => a + (m.title.toLowerCase().includes(t) ? 3 : 0) + (m.keywords.toLowerCase().includes(t) ? 2 : 0) + (m.description.toLowerCase().includes(t) ? 1 : 0), 0);
+  const items = SEED.materials.filter(m => m.status === "released"
+    && (!f.subject.length || f.subject.includes(TOPICS[m.topic_id].subject_id)) && (!f.topic.length || f.topic.includes(m.topic_id))
+    && (!f.level.length || f.level.includes(m.level)) && (!f.type.length || f.type.includes(m.type))
+    && terms.every(t => (m.title + " " + m.description + " " + m.keywords).toLowerCase().includes(t)))
+    .sort((a, b) => (sort === "relevance" && terms.length ? rel(b) - rel(a) : 0) || a.title.localeCompare(b.title, "de"));
+  const group = (title, k, opts) => html`<fieldset style=${{ border: 0, padding: 0, margin: 0 }}><legend><b>${title}</b></legend>${opts.map(([v, l]) => html`<label key=${v} class="chk"><input type="checkbox" checked=${f[k].includes(v)} onChange=${() => tog(k, v)} /><span>${l}</span></label>`)}</fieldset>`;
+  const active = Object.values(f).reduce((a, x) => a + x.length, 0);
+  const topicOpts = SEED.topics.filter(t => !f.subject.length || f.subject.includes(t.subject_id)).map(t => [t.id, t.title]);
+  const filters = html`<div class="card stack">
+    ${group("Fach", "subject", SEED.subjects.map(s => [s.id, s.title]))}${group("Thema", "topic", topicOpts)}
+    ${group("Niveau", "level", Object.entries(LEVEL_LABEL))}${group("Materialtyp", "type", Object.entries(TYPE_LABEL))}
+    <div class="row"><button class="btn ghost" onClick=${() => setF({ subject: [], topic: [], level: [], type: [] })}>Zurücksetzen</button>
+      <button class="btn primary mob" onClick=${() => setPanel(false)}>${items.length} Treffer anzeigen</button></div></div>`;
+  const narrow = typeof window !== "undefined" && window.innerWidth < 900;
+  return html`<div class="stack">
+    <h1>Materialbibliothek</h1>
+    <form class="row" role="search" onSubmit=${e => e.preventDefault()}><label class="sr" for="q">Suche in Titel, Beschreibung und Schlagwörtern</label>
+      <input id="q" type="search" placeholder="Suchen (Titel, Beschreibung, Schlagwörter)" style=${{ flex: "1 1 220px", width: "auto" }} value=${q} onInput=${e => setQ(e.target.value)} />
+      ${narrow ? html`<button type="button" class="btn" aria-expanded=${panel} onClick=${() => setPanel(true)}>Filter${active ? ` (${active})` : ""}</button>` : null}</form>
+    <div class="lib" style=${{ display: "grid", gridTemplateColumns: "1fr", gap: "16px" }}>
+      ${narrow ? null : html`<aside aria-label="Filter">${filters}</aside>`}
+      <div class="stack" style=${{ minWidth: 0 }}>
+        <div class="between"><p role="status"><b>${items.length} ${items.length === 1 ? "Material" : "Materialien"}</b></p>
+          <label class="row small" style=${{ fontWeight: 600 }}>Sortierung<select id="sort" style=${{ width: "auto" }} value=${sort} onChange=${e => setSort(e.target.value)}><option value="relevance">Relevanz</option><option value="title">Titel</option></select></label></div>
+        ${items.length ? items.map(m => html`<${MaterialCard} key=${m.id} m=${m} fav=${favs.has(m.id)} toggleFav=${toggleFav} open=${openMat} />`) : html`<div class="card"><p>Keine passenden freigegebenen Materialien gefunden.</p></div>`}
+      </div></div>
+    ${narrow && panel ? html`<div class="overlay" onClick=${e => e.target === e.currentTarget && setPanel(false)}><div class="modal" role="dialog" aria-modal="true" aria-label="Filter">
+      <div class="between"><h2>Filter</h2><button class="btn ghost" aria-label="Filter schließen" onClick=${() => setPanel(false)}>✕</button></div>${filters}</div></div>` : null}
+  </div>`;
+}
+
+function MaterialPage({ ctx, id }) {
+  const { favs, toggleFav, go, downloads } = ctx;
+  const m = MATERIALS[id]; const [view, setView] = useState("main"); const [msg, setMsg] = useState(null);
+  const solLabel = m.type === "assessment" ? "Auswertungshilfe" : "Lösung";
+  const sheet = SHEETS[m.key];
+  const save = async () => {
+    try {
+      const body = document.getElementById("sheet-" + view)?.outerHTML ?? "";
+      const doc = `<!doctype html><html lang="de"><meta charset="utf-8"><title>${m.title}</title><style>body{font-family:Andika,Arial,sans-serif;max-width:760px;margin:24px auto;padding:0 16px}${SHEET_CSS}</style>${body}</html>`;
+      await downloads.save({ filename: `${m.key}-${view === "main" ? "blatt" : "loesung"}.html`, data: doc });
+      setMsg(["ok", "Datei gespeichert. Öffnen Sie sie im Browser und drucken Sie von dort (A4)."]);
+    } catch (e) { setMsg(["warn", e?.code === "declined" ? "Speichern abgebrochen." : "Speichern ist in dieser Ansicht nicht möglich."]); }
+  };
+  return html`<div class="stack">
+    <div><button class="btn ghost" onClick=${() => go("back")}>‹ Zurück</button></div>
+    <div class="between"><h1>${m.title}</h1><button class=${"btn" + (favs.has(m.id) ? " on" : "")} aria-pressed=${favs.has(m.id)} onClick=${() => toggleFav(m.id)}>${favs.has(m.id) ? "★ Gemerkt" : "☆ Merken"}</button></div>
+    <div class="row"><${Pill}>${SUBJECTS[TOPICS[m.topic_id].subject_id].title}</${Pill}><${Pill}>${TYPE_LABEL[m.type]}</${Pill}><${Pill}>${LEVEL_LABEL[m.level]}</${Pill}><${Pill}>${m.duration_minutes} Minuten</${Pill}></div>
+    <${Note} k="warn"><p><b>Demonstrationsmaterial – nicht fachlich geprüft.</b> Vor dem Unterrichtseinsatz durch eine Lehrkraft prüfen.</p></${Note}>
+    <div class="grid2">
+      <div class="stack">
+        <section class="card stack"><h2>Beschreibung</h2><p>${m.description}</p><h3>Lernziel</h3><p>${m.learning_goal}</p>
+          <dl style=${{ display: "grid", gridTemplateColumns: "minmax(110px,max-content) 1fr", gap: "4px 12px", margin: 0 }}>
+            <dt class="muted">Thema (Pilotplanung)</dt><dd style=${{ margin: 0 }}>${TOPICS[m.topic_id].title}</dd>
+            <dt class="muted">Autor</dt><dd style=${{ margin: 0 }}>${m.author}</dd><dt class="muted">Lizenz</dt><dd style=${{ margin: 0 }}>${m.license_text}</dd>
+            <dt class="muted">Freigabestand</dt><dd style=${{ margin: 0 }}>Technische Demo-Freigabe, keine fachliche Prüfung</dd>
+            <dt class="muted">Schlagwörter</dt><dd style=${{ margin: 0 }}>${m.keywords}</dd></dl></section>
+        <section class="card stack"><h2>Offizieller Lehrplanbezug</h2><p class="small muted">LehrplanPLUS Bayern, Jgst. 1/2, sinngemäß. Die Zuordnung zu Klasse 1 ist eine pädagogische Pilotplanung.</p>
+          ${m.curriculum_ids.map(c => html`<div key=${c}><b>${CURR[c].section_code}</b> ${CURR[c].section_title}<br />${CURR[c].paraphrased_goal}<br /><span class="small muted">⚠ ungeprüft · <a href=${CURR[c].source_url} target="_blank" rel="noopener noreferrer">Quelle (online)</a></span></div>`)}</section>
+      </div>
+      <section class="card stack"><h2>Material</h2>
+        ${m.has_solution ? html`<div class="row" role="group" aria-label="Ansicht wählen">
+          <button class=${"btn" + (view === "main" ? " primary" : "")} aria-pressed=${view === "main"} onClick=${() => setView("main")}>Schülerblatt</button>
+          <button class=${"btn" + (view === "solution" ? " primary" : "")} aria-pressed=${view === "solution"} onClick=${() => setView("solution")}>${solLabel}</button></div>`
+          : html`<${Note}>Zu diesem Material gibt es keine ${solLabel}.</${Note}>`}
+        <p class="small muted">In der Demo als druckfähige HTML-Ansicht statt PDF. Drucken ist innerhalb von Claude nicht möglich – speichern Sie die Seite und drucken Sie sie im Browser.</p>
+        ${downloads ? html`<div><button class="btn" onClick=${save}>Als HTML-Datei speichern (zum Drucken)</button></div>` : null}
+        ${msg ? html`<${Note} k=${msg[0]}>${msg[1]}</${Note}>` : null}
+        <div style=${{ overflowX: "auto" }}>${sheet ? sheet(view === "solution", m) : null}</div>
+      </section>
+    </div></div>`;
+}
+
+function Favorites({ ctx }) {
+  const { favs, toggleFav, openMat } = ctx; const list = [...favs].map(id => MATERIALS[id]).filter(Boolean);
+  return html`<div class="stack"><h1>Merkliste</h1>
+    ${list.length ? list.map(m => html`<${MaterialCard} key=${m.id} m=${m} fav=${true} toggleFav=${toggleFav} open=${openMat} />`) : html`<div class="card"><p>Ihre Merkliste ist leer. Merken Sie Materialien in der Bibliothek mit „☆ Merken“.</p></div>`}</div>`;
+}
+
+function NoClass({ go }) {
+  return html`<div class="stack"><h1>Willkommen</h1><${Note}><p>Legen Sie zuerst eine Klasse an.</p><div><button class="btn primary" onClick=${() => go("classes")}>Klasse anlegen</button></div></${Note}></div>`;
+}
+function ClassPicker({ ctx }) {
+  const { myClasses, cls, setClassId } = ctx;
+  if (myClasses.length < 2) return null;
+  return html`<label class="row small" style=${{ fontWeight: 600 }}>Klasse<select id="cp" style=${{ width: "auto" }} value=${cls?.id} onChange=${e => setClassId(e.target.value)}>${myClasses.map(c => html`<option key=${c.id} value=${c.id}>${c.name}</option>`)}</select></label>`;
+}
+
+const DAYS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+function Classes({ ctx }) {
+  const { myClasses, saveClass, deleteClass, account } = ctx;
+  const blank = () => ({ id: uid(), owner_id: account.id, name: "", school_year_id: YEAR.id, weekdays: [0, 1, 2, 3, 4], hours: Object.fromEntries(SEED.subjects.map(s => [s.id, s.code === "D" ? 7 : 5])) });
+  const [edit, setEdit] = useState(null); const [del, setDel] = useState(null);
+  return html`<div class="stack">
+    <div class="between"><h1>Meine Klassen</h1><button class="btn primary" onClick=${() => setEdit(blank())}>+ Klasse anlegen</button></div>
+    ${myClasses.map(c => html`<article key=${c.id} class="card stack" style=${{ gap: "6px" }}><h2>${c.name}</h2>
+      <p class="muted">Schuljahr ${YEAR.label} · Jahrgangsstufe 1 · Bayern · Grundschule</p>
+      <p class="small">Unterrichtstage: ${c.weekdays.map(d => DAYS[d].slice(0, 2)).join(", ")} · ${SEED.subjects.map(s => `${s.title} ${c.hours[s.id] ?? 0} Std.`).join(" · ")}</p>
+      <div class="row"><button class="btn" onClick=${() => setEdit({ ...c, weekdays: [...c.weekdays], hours: { ...c.hours } })}>Bearbeiten</button>
+        ${del === c.id ? html`<button class="btn danger" onClick=${() => { deleteClass(c.id); setDel(null); }}>Klasse und alle Einheiten löschen</button>` : html`<button class="btn danger" onClick=${() => setDel(c.id)}>Löschen</button>`}</div></article>`)}
+    ${edit ? html`<div class="overlay" onClick=${e => e.target === e.currentTarget && setEdit(null)}><form class="modal" role="dialog" aria-modal="true" aria-labelledby="ct" onSubmit=${e => { e.preventDefault(); if (edit.name.trim() && edit.weekdays.length) { saveClass({ ...edit, name: edit.name.trim() }); setEdit(null); } }}>
+      <h2 id="ct">${myClasses.some(c => c.id === edit.id) ? "Klasse bearbeiten" : "Klasse anlegen"}</h2>
+      <label class="f">Name der Klasse<input id="c-name" required value=${edit.name} placeholder="z. B. 1a" onInput=${e => setEdit({ ...edit, name: e.target.value })} /></label>
+      <p class="small muted">Im Pilot fest: Schuljahr ${YEAR.label}, Jahrgangsstufe 1, Bayern, Grundschule.</p>
+      <fieldset style=${{ border: 0, padding: 0, margin: 0 }}><legend><b>Unterrichtstage</b></legend><div class="row">${DAYS.map((d, i) => html`<label key=${d} class="chk" style=${{ marginRight: "10px" }}><input type="checkbox" checked=${edit.weekdays.includes(i)} onChange=${() => setEdit({ ...edit, weekdays: edit.weekdays.includes(i) ? edit.weekdays.filter(x => x !== i) : [...edit.weekdays, i].sort() })} />${d}</label>`)}</div>
+        ${edit.weekdays.length ? null : html`<p class="small" style=${{ color: "var(--err)" }}>⚠ Mindestens ein Wochentag ist erforderlich.</p>`}</fieldset>
+      <div class="fgrid">${SEED.subjects.map(s => html`<label key=${s.id} class="f">Wochenstunden ${s.title}<input type="number" min="0" max="20" inputMode="numeric" value=${edit.hours[s.id] ?? 0} onChange=${e => setEdit({ ...edit, hours: { ...edit.hours, [s.id]: Math.max(0, parseInt(e.target.value) || 0) } })} /></label>`)}</div>
+      <div class="row"><span style=${{ flex: 1 }}></span><button type="button" class="btn ghost" onClick=${() => setEdit(null)}>Abbrechen</button><button class="btn primary" disabled=${!edit.name.trim() || !edit.weekdays.length}>Speichern</button></div>
+    </form></div>` : null}
+  </div>`;
+}
+
+function DataPage({ ctx }) {
+  const { state, store, replaceState, downloads, resetAll } = ctx;
+  const [text, setText] = useState(""); const [res, setRes] = useState(null); const [copied, setCopied] = useState(""); const [conf, setConf] = useState(false);
+  const json = useMemo(() => exportJson(state), [state]);
+  const copy = async () => { try { await navigator.clipboard.writeText(json); setCopied("In die Zwischenablage kopiert."); } catch { const t = document.getElementById("exp"); t.focus(); t.select(); setCopied("Text markiert – bitte mit Strg+C / ⌘C kopieren."); } };
+  const save = async () => { try { await downloads.save({ filename: "unterrichtsassistent-demo.json", data: json }); setCopied("Datei gespeichert."); } catch (e) { setCopied(e?.code === "declined" ? "Speichern abgebrochen." : "Speichern nicht möglich – bitte Text kopieren."); } };
+  const readFile = (file) => { if (!file) return; const r = new FileReader(); r.onload = () => { setText(String(r.result)); setRes(null); }; r.readAsText(file); };
+  return html`<div class="stack">
+    <h1>Daten & Speicher</h1>
+    <section class="card stack"><h2>Speichermodus</h2>
+      <div class="storage"><span class=${"dot" + (store.mode === "personal" ? " ok" : "")} aria-hidden="true"></span><span>${store.label}</span></div>
+      <p class="small muted">Gespeichert werden Klassen, Pläne und Merkliste aller Demo-Konten in diesem Browser-Profil bzw. Ihrem persönlichen Claude-Speicher. Keine Passwörter, keine Schülerdaten. Bitte keine vertraulichen Daten eingeben.</p>
+      <div>${conf ? html`<button class="btn danger" onClick=${() => { resetAll(); setConf(false); }}>Wirklich alle Demo-Daten löschen</button>` : html`<button class="btn danger" onClick=${() => setConf(true)}>Alle Demo-Daten zurücksetzen</button>`}</div></section>
+    <section class="card stack"><h2>JSON-Export</h2>
+      <p class="small muted">Enthält schema_version, topics, materials, classes, units und favorites – dasselbe Format, das der lokale Pilot importiert (Materialien dort zunächst als Entwurf).</p>
+      <div class="row"><button class="btn primary" onClick=${copy}>Kopieren</button>${downloads ? html`<button class="btn" onClick=${save}>Als Datei speichern</button>` : null}${copied ? html`<span class="small" role="status">${copied}</span>` : null}</div>
+      <textarea id="exp" readOnly value=${json} rows="8"></textarea></section>
+    <section class="card stack"><h2>JSON-Import</h2>
+      <p class="small muted">Geprüft werden Schema, Datentypen, referenzierte IDs (Themen, Materialien, Kompetenzen, Klassen) und die Eigentümerzuordnung zu den Demo-Konten. Bei Fehlern wird nichts übernommen.</p>
+      <label class="f">Datei wählen<input id="imp-file" type="file" accept="application/json,.json" onChange=${e => readFile(e.target.files?.[0])} /></label>
+      <label class="f">oder JSON einfügen<textarea id="imp" value=${text} onInput=${e => { setText(e.target.value); setRes(null); }} placeholder='{"schema_version": 1, ...}'></textarea></label>
+      <div class="row"><button class="btn" disabled=${!text.trim()} onClick=${() => setRes(validateImport(text))}>Prüfen</button>
+        <button class="btn primary" disabled=${!res || res.errors.length > 0} onClick=${() => { replaceState(res.state); setRes({ errors: [], done: true }); setText(""); }}>Übernehmen (ersetzt aktuelle Daten)</button></div>
+      ${res ? (res.done ? html`<${Note} k="ok">Import übernommen.</${Note}>` : res.errors.length ? html`<${Note} k="err"><p>${res.errors.length} Fehler – nichts übernommen:</p><ul style=${{ margin: 0, paddingLeft: "20px" }}>${res.errors.slice(0, 30).map((e, i) => html`<li key=${i}>${e}</li>`)}</ul></${Note}>`
+        : html`<${Note} k="ok">Keine Fehler: ${res.state.classes.length} Klassen, ${res.state.units.length} Einheiten, ${res.state.favorites.length} Merklisten-Einträge.</${Note}>`) : null}
+    </section></div>`;
+}
+
+function Entry({ onPick, store }) {
+  return html`<main class="entry">
+    <p class="sim" style=${{ alignSelf: "flex-start", color: "var(--demo)" }}>Simulation · Variante B</p>
+    <h1>Unterrichtsassistent – Demo</h1>
+    <p>Bayern · Grundschule · Klasse 1 · Deutsch und Mathematik. Diese Demo läuft in Claude und dient zum Ausprobieren der Abläufe. Sie ersetzt nicht den lokalen Pilot mit eigener Datenbank, PDF-Speicher und Benutzerverwaltung.</p>
+    <${Note} k="warn"><p><b>Simulierte Anmeldung:</b> Wählen Sie ein fiktives Demo-Konto. Es werden keine Passwörter abgefragt oder gespeichert.</p></${Note}>
+    <div class="acc">${ACCOUNTS.map(a => html`<button key=${a.id} onClick=${() => onPick(a)}><b style=${{ fontSize: "1.1rem" }}>${a.name}</b><span class="muted small">${a.note}</span><span class="small" style=${{ color: "var(--accent)" }}>Als ${a.name} fortfahren ›</span></button>`)}</div>
+    <div class="storage"><span class=${"dot" + (store?.mode === "personal" ? " ok" : "")} aria-hidden="true"></span><span>${store ? store.label : "Speicher wird geprüft …"}</span></div>
+  </main>`;
+}
+
+/* ---------------- App ---------------- */
+function App() {
+  const [store, setStore] = useState(null);
+  const [state, setState] = useState(emptyState());
+  const [loaded, setLoaded] = useState(false);
+  const [downloads, setDownloads] = useState(null);
+  const [account, setAccount] = useState(null);
+  const [page, setPage] = useState("dash"); const [hist, setHist] = useState([]);
+  const [matId, setMatId] = useState(null);
+  const [classId, setClassId] = useState(null);
+  const [week, setWeek] = useState(() => { const t = monday(todayBerlin()); return t < monday(YEAR.starts_on) ? "2026-09-21" : t; });
+  const [modal, setModal] = useState(null); const [saveErr, setSaveErr] = useState(null);
+  const saveTimer = useRef(null); const dirty = useRef(false);
+
+  useEffect(() => { (async () => {
+    const s = await createStore(); setStore(s);
+    try { setState(await s.load()); } catch { setState(emptyState()); }
+    setLoaded(true);
+    try { setDownloads(window.claude?.use ? await window.claude.use("downloads") : null); } catch { setDownloads(null); }
+  })(); }, []);
+  useEffect(() => {
+    if (!loaded || !dirty.current) return;
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => { try { await store.save(state); setSaveErr(null); } catch (e) { setSaveErr("Speichern fehlgeschlagen – Änderungen gelten nur für diese Sitzung."); } }, 600);
+  }, [state, loaded]);
+  const mutate = (fn) => { dirty.current = true; setState(s => fn(JSON.parse(JSON.stringify(s)))); };
+
+  const myClasses = account ? state.classes.filter(c => c.owner_id === account.id) : [];
+  const cls = myClasses.find(c => c.id === classId) ?? myClasses[0] ?? null;
+  const myClassIds = new Set(myClasses.map(c => c.id));
+  const units = state.units.filter(u => myClassIds.has(u.class_id));
+  const favs = new Set(account ? state.favorites.filter(f => f.owner_id === account.id).map(f => f.material_id) : []);
+
+  const go = (p) => { if (p === "back") { const h = [...hist]; const last = h.pop() ?? "dash"; setHist(h); setPage(last); return; } setHist(h => [...h, page]); setPage(p); window.scrollTo(0, 0); };
+  const ctx = {
+    state, store, account, myClasses, cls, units, week, setWeek, favs, downloads, go, setModal,
+    setClassId,
+    openMat: (id) => { setMatId(id); go("mat"); },
+    toggleFav: (id) => mutate(s => { const i = s.favorites.findIndex(f => f.owner_id === account.id && f.material_id === id); if (i >= 0) s.favorites.splice(i, 1); else s.favorites.push({ owner_id: account.id, material_id: id }); return s; }),
+    updateUnit: (u) => mutate(s => { s.units = s.units.map(x => x.id === u.id ? { ...u, version: (x.version || 1) + 1 } : x); return s; }),
+    saveClass: (c) => { mutate(s => { const i = s.classes.findIndex(x => x.id === c.id); if (i >= 0) s.classes[i] = c; else s.classes.push(c); return s; }); setClassId(c.id); },
+    deleteClass: (id) => mutate(s => { s.classes = s.classes.filter(c => c.id !== id); s.units = s.units.filter(u => u.class_id !== id); return s; }),
+    replaceState: (ns) => mutate(() => ns),
+    resetAll: () => mutate(() => emptyState()),
+  };
+  const nav = [["dash", "Übersicht"], ["plan", "Wochenplan"], ["lib", "Bibliothek"], ["fav", "Merkliste"], ["classes", "Klassen"], ["data", "Daten"]];
+
+  if (!account) return html`<${Entry} store=${store} onPick=${a => { setAccount(a); setPage(state.classes.some(c => c.owner_id === a.id) ? "dash" : "classes"); }} />`;
+  const replaceUnits = (fn) => mutate(s => { s.units = fn(s.units); return s; });
+  return html`<div>
+    <header class="bar"><div class="bar-in">
+      <div class="brand"><span>Unterrichtsassistent</span><span class="sim">Demo</span></div>
+      <nav class="nav" aria-label="Hauptnavigation">${nav.map(([k, l]) => html`<button key=${k} aria-current=${page === k ? "page" : undefined} onClick=${() => { setHist([]); setPage(k); }}>${l}</button>`)}
+        <button onClick=${() => { setAccount(null); setPage("dash"); setHist([]); }} title="Simulierte Abmeldung">${account.name} · Wechseln</button></nav>
+    </div></header>
+    <main class="wrap">
+      <div class="storage" title="Aktiver Speichermodus"><span class=${"dot" + (store?.mode === "personal" ? " ok" : "")} aria-hidden="true"></span><span>${store?.label}</span></div>
+      ${saveErr ? html`<${Note} k="err">${saveErr}</${Note}>` : null}
+      ${page === "dash" ? html`<${Dashboard} ctx=${ctx} />` : page === "plan" ? html`<${PlanPage} ctx=${ctx} />` : page === "lib" ? html`<${Library} ctx=${ctx} />`
+        : page === "mat" ? html`<${MaterialPage} key=${matId} ctx=${ctx} id=${matId} />` : page === "fav" ? html`<${Favorites} ctx=${ctx} />` : page === "classes" ? html`<${Classes} ctx=${ctx} />` : html`<${DataPage} ctx=${ctx} />`}
+    </main>
+    ${modal?.kind === "unit" && cls ? html`<${UnitModal} cls=${cls} units=${units} unit=${modal.unit} defaultWeek=${modal.defaultWeek ?? week} moveOnly=${modal.moveOnly}
+        onClose=${() => setModal(null)} onDelete=${(id) => { replaceUnits(us => us.filter(u => u.id !== id)); setModal(null); }}
+        onSave=${(u) => { replaceUnits(us => us.some(x => x.id === u.id) ? us.map(x => x.id === u.id ? { ...u, version: (x.version || 1) + 1 } : x) : [...us, { ...u, sequence: us.filter(x => x.class_id === u.class_id && x.subject_id === u.subject_id).length + 1 }]); setModal(null); }} />` : null}
+    ${modal?.kind === "init" && cls ? html`<${InitModal} cls=${cls} has=${units.some(u => u.class_id === cls.id)} onClose=${() => setModal(null)} onRun=${(replace) => { replaceUnits(us => [...us.filter(u => u.class_id !== cls.id || !replace), ...initPlan(cls)]); setModal(null); }} />` : null}
+  </div>`;
+}
+
+function InitModal({ cls, has, onClose, onRun }) {
+  const [rep, setRep] = useState(false);
+  return html`<div class="overlay" onClick=${e => e.target === e.currentTarget && onClose()}><div class="modal" role="dialog" aria-modal="true" aria-labelledby="it">
+    <h2 id="it">Plan aus Vorlage anlegen</h2>
+    <p>Die Pilotvorlagen für Deutsch und Mathematik werden in den Plan von <b>${cls.name}</b> kopiert und nacheinander auf die Unterrichtswochen verteilt. Ferien bleiben frei, verkürzte Wochen erhalten anteilig weniger Stunden.</p>
+    <${Note}>Die Startinhalte decken nur einen Teil des Schuljahrs ab (ca. 17 Wochen je Fach).</${Note}>
+    ${has ? html`<${Note} k="warn"><p>Der Plan enthält bereits Einheiten.</p><label class="chk"><input type="checkbox" checked=${rep} onChange=${e => setRep(e.target.checked)} /> Ja, vorhandene Einheiten ersetzen</label></${Note}>` : null}
+    <div class="row"><span style=${{ flex: 1 }}></span><button class="btn ghost" onClick=${onClose}>Abbrechen</button><button class="btn primary" disabled=${has && !rep} onClick=${() => onRun(rep)}>Bestätigen und anlegen</button></div>
+  </div></div>`;
+}
+
+/* ---------------- Arbeitsblätter als HTML (entsprechen den Pilot-PDFs) ---------------- */
+const SHEET_CSS = `.sheet{border:1px solid #ccc;padding:24px;font-size:1.15rem;line-height:1.6;display:flex;flex-direction:column;gap:18px;color:#161616;background:#fff}.task{border:2px solid #222;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}.task-h{display:flex;justify-content:space-between;font-weight:700}.items{display:flex;flex-wrap:wrap;gap:14px 22px}.item{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:70px}.pic{font-size:2.2rem}.box{display:inline-flex;width:46px;height:46px;border:2px solid #222;border-radius:4px;align-items:center;justify-content:center;font-weight:700;font-size:1.4rem}.lines{height:44px;border-bottom:1.5px solid #222;border-top:1px solid #999}.sol{color:#1d4ea0;font-weight:700}.foot{font-size:.72rem;color:#666;border-top:1px solid #ccc;padding-top:6px}.namebox{display:flex;gap:16px}.namebox span{flex:1;border-bottom:1.5px solid #333}.dots{display:inline-grid;grid-template-columns:repeat(5,14px);gap:5px}.dots i{width:14px;height:14px;border-radius:50%;background:#222;display:block}`;
+const Box = (sol, v) => html`<span class="box">${sol ? html`<span class="sol">${v}</span>` : ""}</span>`;
+const Dots = (n) => html`<span class="dots" aria-label=${n + " Punkte"}>${Array.from({ length: n }, (_, i) => html`<i key=${i}></i>`)}</span>`;
+const Task = (label, stars, instr, body) => html`<div class="task"><div class="task-h"><span>${label}</span><span class="stars" aria-label=${stars + " von 3 Sternen"}>${"★".repeat(stars)}${"☆".repeat(3 - stars)}</span></div><p>${instr}</p>${body}</div>`;
+function Sheet(id, sol, m, title, children, withName = true) {
+  return html`<div class="sheet" id=${"sheet-" + (sol ? "solution" : "main")}>
+    <p class="meta">${SUBJECTS[TOPICS[m.topic_id].subject_id].title} · Klasse 1 · ${TOPICS[m.topic_id].title}</p>
+    <h2>${title}${sol ? (m.type === "assessment" ? " – Auswertungshilfe" : " – Lösung") : ""}</h2>
+    ${withName && !sol ? html`<div class="namebox"><span>Name:</span><span>Datum:</span></div>` : null}
+    ${children}
+    <p class="foot">Demonstrationsmaterial – nicht fachlich geprüft · selbst erstellt für den technischen Pilot · CC BY 4.0</p></div>`;
+}
+const Plan = (m, sol, title, parts) => Sheet(m.id, sol, m, title, html`<p><i>Unterrichtsplan für eine Unterrichtsstunde (45 Minuten)</i></p>${Object.entries(parts).map(([h, b]) => html`<div key=${h}><h3>${h}</h3>${Array.isArray(b) ? html`<ul>${b.map((x, i) => html`<li key=${i}>${x}</li>`)}</ul>` : html`<p>${b}</p>`}</div>`)}`, false);
+const SHEETS = {
+  d1: (sol, m) => Sheet(m.id, sol, m, "Anlaute hören", html`
+    ${Task("Teil A", 1, "Sprich das Wort. Welchen Laut hörst du am Anfang? Kreise den Buchstaben ein.", html`<div class="items">${[["☀️", "Sonne", "M S B", "S"], ["🌙", "Mond", "M F A", "M"], ["⚽", "Ball", "E H B", "B"], ["🏠", "Haus", "H S M", "H"]].map(([p, w, c, a]) => html`<div class="item" key=${w}><span class="pic" role="img" aria-label=${w}>${p}</span><span>${c.split(" ").map(x => html`<span key=${x} style=${{ margin: "0 6px", ...(sol && x === a ? { border: "2px solid #1d4ea0", borderRadius: "50%", padding: "0 6px", color: "#1d4ea0" } : {}) }}>${x}</span>`)}</span>${sol ? html`<span class="sol small">${w}</span>` : null}</div>`)}</div>`)}
+    ${Task("Teil B", 2, "Sprich das Wort. Schreibe den Anfangsbuchstaben in das Kästchen.", html`<div class="items">${[["🐟", "Fisch", "F"], ["🍎", "Apfel", "A"], ["🍦", "Eis", "E"], ["🐭", "Maus", "M"]].map(([p, w, a]) => html`<div class="item" key=${w}><span class="pic" role="img" aria-label=${w}>${p}</span>${Box(sol, a)}</div>`)}</div>`)}
+    ${Task("Teil C", 3, "Finde ein eigenes Wort, das mit M anfängt. Male es und schreibe den ersten Buchstaben.", html`<div style=${{ border: "1.5px solid #222", minHeight: "110px", padding: "8px" }}>${sol ? html`<span class="sol">Beispiele: Maus, Mond, Mama, Milch, Möhre, Mütze</span>` : ""}</div>`)}`),
+  d2: (sol, m) => Sheet(m.id, sol, m, "Der Buchstabe M m", html`
+    ${Task("Teil A", 1, "Spure die Buchstaben nach. Sprich dabei leise: mmm.", html`<p style=${{ fontSize: "3rem", letterSpacing: "18px", color: sol ? "#222" : "#bbb" }}><span style=${{ color: "#222" }}>M</span>MM mmm</p><div class="lines"></div>`)}
+    ${Task("Teil B", 2, "Kreise alle M und m ein. Wie viele findest du?", html`<div style=${{ display: "grid", gridTemplateColumns: "repeat(4, 48px)", gap: "6px", fontSize: "1.6rem", fontWeight: 700 }}>${"M a m O t m L M o M e m M i s m".split(" ").map((c, i) => html`<span key=${i} style=${{ textAlign: "center", ...(sol && c.toLowerCase() === "m" ? { border: "2px solid #1d4ea0", borderRadius: "50%", color: "#1d4ea0" } : {}) }}>${c}</span>`)}</div><p>Ich finde ${Box(sol, "8")} M m.</p>`)}
+    ${Task("Teil C", 3, "Lies die Wörter. Schreibe sie ab.", html`${["Mama", "Oma", "Mimi"].map(w => html`<div key=${w} style=${{ display: "flex", gap: "14px", alignItems: "flex-end" }}><b style=${{ fontSize: "1.5rem", minWidth: "90px" }}>${w}</b><div class="lines" style=${{ flex: 1 }}>${sol ? html`<span class="sol">${w}</span>` : ""}</div></div>`)}`)}`),
+  d3: (sol, m) => Sheet(m.id, sol, m, "Silben schwingen und lesen", html`
+    ${Task("Teil A", 1, "Sprich das Wort und klatsche dazu. Male für jede Silbe einen Kreis aus.", html`<div class="items">${[["☀️", "Sonne", "Son-ne", 2], ["🌙", "Mond", "Mond", 1], ["🍎", "Apfel", "Ap-fel", 2], ["🍅", "Tomate", "To-ma-te", 3]].map(([p, w, s, n]) => html`<div class="item" key=${w}><span class="pic" role="img" aria-label=${w}>${p}</span><span>${sol ? s : w}</span><span>${[0, 1, 2].map(k => html`<span key=${k} style=${{ display: "inline-block", width: "18px", height: "18px", borderRadius: "50%", border: "2px solid #222", margin: "0 3px", background: sol && k < n ? "#1d4ea0" : "transparent" }}></span>`)}</span></div>`)}</div>`)}
+    ${Task("Teil B", 2, "Lies die Silben. Verbinde sie zu einem Wort.", html`<div style=${{ display: "grid", gridTemplateColumns: "60px 1fr 60px", gap: "8px", fontSize: "1.4rem", fontWeight: 700 }}>${[["Ma", "se"], ["O", "ma"], ["Li", "na"], ["Ro", "ma"]].map(([a, b], i) => html`<${React.Fragment} key=${i}><span>${a}</span><span style=${{ borderBottom: "1px dotted #999" }}></span><span>${b}</span></${React.Fragment}>`)}</div>${sol ? html`<p class="sol">Ma–ma (Mama), O–ma (Oma), Li–na (Lina), Ro–se (Rose)</p>` : null}`)}
+    ${Task("Teil C", 3, "Lies die Wörter mit Silbenbögen. Schreibe sie ab.", html`${["Ro-se", "La-ma", "Mo-na-te"].map(w => html`<div key=${w} style=${{ display: "flex", gap: "14px", alignItems: "flex-end" }}><b style=${{ fontSize: "1.4rem", minWidth: "120px" }}>${w.split("-").map((s, i) => html`<span key=${i} style=${{ borderBottom: "2px solid #222", borderRadius: "0 0 50% 50%", marginRight: "3px" }}>${s}</span>`)}</b><div class="lines" style=${{ flex: 1 }}>${sol ? html`<span class="sol">${w.replace(/-/g, "")}</span>` : ""}</div></div>`)}`)}`),
+  d4: (sol, m) => Plan(m, sol, "Buchstaben schreiben: M und m", {
+    "Lernziel": "Die Kinder schreiben M und m formklar in der Lineatur und schreiben erste kurze Wörter (Mama, Oma) ab.",
+    "Voraussetzung": "Laut /m/ ist eingeführt; Kinder kennen die Lineatur mit Grund- und Mittellinie.",
+    "Materialliste": ["Arbeitsblatt „Der Buchstabe M m“", "Tafel mit Lineatur", "Sandtablett oder Fühlbuchstaben", "Bleistift, Wachsmalkreide"],
+    "Einstieg (10 Minuten)": ["Sitzkreis: Gegenstände mit /m/ aus einer Fühlkiste ertasten und benennen.", "M und m an der Tafel; Kinder schreiben in die Luft und auf den Rücken des Nachbarkindes."],
+    "Arbeitsphase (25 Minuten)": ["Schwungübung (Bögen) mit Wachsmalkreide.", "Teil A des Arbeitsblatts, dann selbstständig in der Lineatur.", "Teil B: Buchstabenjagd; Teil C: Wörter abschreiben.", "Lehrkraft begleitet Stifthaltung und Bewegungsrichtung."],
+    "Abschluss (10 Minuten)": ["Kinder zeigen ihren schönsten Buchstaben und begründen kurz.", "Gemeinsames Lesen: Mama, Oma, Mimi."],
+    "Differenzierung": ["Basis: Buchstaben im Sand nachfahren, nur Teil A.", "Standard: Teil A und B.", "Erweitert: Teil C und eigene Wörter mit M."],
+    "Hinweis": "Buchstabenfolge und Schrift an das eingesetzte Lehrwerk anpassen." }),
+  d5: (sol, m) => sol ? Sheet(m.id, sol, m, "Gut zuhören", html`
+    <p><i>Formative Lernstandskontrolle – keine amtlich vorgegebene Prüfung. Ergebnisse werden nicht in der Anwendung erfasst.</i></p>
+    <div><h3>Vorlesetext (langsam, zweimal vorlesen)</h3><p>Mia geht in den Garten. Sie nimmt ihren roten Ball mit. Unter dem großen Baum liegt ein Apfel. Mia hebt den Apfel auf und isst ihn. Dann geht sie zum kleinen Teich. Im Wasser schwimmt ein Fisch. Mia winkt dem Fisch zu und läuft mit ihrem Ball nach Hause.</p></div>
+    <div><h3>Lösungen</h3><ul><li>Aufgabe 1: Ball</li><li>Aufgabe 2: Apfel</li><li>Aufgabe 3: Fisch</li><li>Aufgabe 4: Mia winkt dem Fisch zu und läuft mit dem Ball nach Hause (sinngemäß).</li></ul></div>
+    <div><h3>Beobachtungshinweise</h3><ul><li>Hört das Kind bis zum Ende zu?</li><li>3 von 3 richtig: sicher; 2: weitgehend; 0–1: Unterstützung anbieten.</li><li>Erzählt es in ganzen Sätzen und sinnvoller Reihenfolge?</li><li>Förderidee: mit Bildkarten nacherzählen; Fragen vorab stellen.</li></ul></div>`, false)
+    : Sheet(m.id, sol, m, "Gut zuhören", html`<p>Deine Lehrerin oder dein Lehrer liest eine Geschichte vor. Hör gut zu.</p>
+      ${[["Was nimmt Mia mit?", [["🍦", "Eis"], ["⚽", "Ball"], ["🐟", "Fisch"]]], ["Was liegt unter dem Baum?", [["🍎", "Apfel"], ["🌙", "Mond"], ["🏠", "Haus"]]], ["Was schwimmt im Teich?", [["☀️", "Sonne"], ["🐭", "Maus"], ["🐟", "Fisch"]]]].map(([q, o], i) =>
+        html`<${React.Fragment} key=${i}>${Task("Aufgabe " + (i + 1), 1, q + " Kreuze das richtige Bild an.", html`<div class="items">${o.map(([p, w]) => html`<div class="item" key=${w}><span class="pic" role="img" aria-label=${w}>${p}</span><span class="box" style=${{ width: "30px", height: "30px" }}></span></div>`)}</div>`)}</${React.Fragment}>`)}
+      ${Task("Aufgabe 4", 2, "Erzähle: Was macht Mia am Ende der Geschichte?", html`<p class="small">(mündlich – deine Lehrkraft hört zu)</p>`)}`),
+  m1: (sol, m) => Sheet(m.id, sol, m, "Mengen zählen bis 10", html`
+    ${Task("Teil A", 1, "Zähle die Punkte. Schreibe die Zahl in das Kästchen.", html`<div class="items">${[3, 5, 2, 4].map((n, i) => html`<div class="item" key=${i}>${Dots(n)}${Box(sol, n)}</div>`)}</div>`)}
+    ${Task("Teil B", 2, "Zähle genau. Schreibe die Zahl auf.", html`<div class="items">${[7, 9, 6, 10].map((n, i) => html`<div class="item" key=${i}>${Dots(n)}${Box(sol, n)}</div>`)}</div>`)}
+    ${Task("Teil C", 3, "Male so viele Punkte, wie die Zahl zeigt.", html`<div class="items">${[6, 8, 10].map((n, i) => html`<div class="item" key=${i}><span class="box">${n}</span><div style=${{ border: "1.5px solid #222", width: "120px", height: "80px", padding: "6px" }}>${sol ? Dots(n) : ""}</div></div>`)}</div>`)}`),
+  m2: (sol, m) => Sheet(m.id, sol, m, "Zahlen vergleichen", html`
+    ${Task("Teil A", 1, "Wo sind mehr Punkte? Kreise die größere Menge ein.", html`${[[4, 6], [8, 5], [3, 7]].map(([a, b], i) => html`<div key=${i} style=${{ display: "flex", gap: "40px" }}>${[a, b].map((n, k) => html`<span key=${k} style=${{ padding: "6px", ...(sol && n === Math.max(a, b) ? { border: "2px solid #1d4ea0", borderRadius: "12px" } : {}) }}>${Dots(n)}</span>`)}</div>`)}`)}
+    ${Task("Teil B", 2, "Setze das richtige Zeichen ein: <  >  =", html`<div class="items">${[[5, 3], [2, 9], [6, 6], [10, 8]].map(([a, b], i) => html`<span key=${i} style=${{ fontSize: "1.6rem", fontWeight: 700, display: "flex", gap: "10px", alignItems: "center" }}>${a} ${Box(sol, a < b ? "<" : a > b ? ">" : "=")} ${b}</span>`)}</div>`)}
+    ${Task("Teil C", 3, "Finde passende Zahlen. Es gibt mehrere Lösungen.", html`<p style=${{ fontSize: "1.5rem", fontWeight: 700 }}>4 < ${Box(false)}  ·  ${Box(false)} > 7  ·  9 > ${Box(false)}</p>${sol ? html`<p class="sol">möglich: 5 bis 10 · 8, 9 oder 10 · 0 bis 8</p>` : null}`)}`),
+  m3: (sol, m) => Sheet(m.id, sol, m, "Zahlen zerlegen", html`
+    ${Task("Teil A", 1, "Schüttelbox: 5 Plättchen. Wie viele liegen links, wie viele rechts? Schreibe auf.", html`<div class="items">${[[2, 3], [4, 1], [0, 5]].map(([a, b], i) => html`<div class="item" key=${i}><div style=${{ display: "flex", border: "1.5px solid #222" }}><span style=${{ padding: "8px", minWidth: "60px", borderRight: "1.5px solid #222" }}>${a ? Dots(a) : ""}</span><span style=${{ padding: "8px", minWidth: "60px" }}>${Dots(b)}</span></div><span>${Box(sol, a)} ${Box(sol, b)}</span></div>`)}</div>`)}
+    ${Task("Teil B", 2, "Fülle das Zahlenhaus aus.", html`<div class="items">${[[6, [[1, 5, 1], [2, 4, 1], [3, 3, 0], [5, 1, 1]]], [8, [[7, 1, 1], [4, 4, 0], [2, 6, 1], [0, 8, 0]]]].map(([top, rows]) => html`<div key=${top} style=${{ textAlign: "center" }}><div style=${{ fontWeight: 700, fontSize: "1.4rem", borderBottom: "2px solid #222" }}>△ ${top}</div>${rows.map(([a, b, given], i) => html`<div key=${i} style=${{ display: "flex" }}>${given ? html`<span class="box">${a}</span>` : Box(sol, a)}${given ? Box(sol, b) : html`<span class="box">${b}</span>`}</div>`)}</div>`)}</div>`)}
+    ${Task("Teil C", 3, "Finde alle Zerlegungen der 10. Fange mit 0 und 10 an.", html`<div style=${{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: "6px" }}>${Array.from({ length: 11 }, (_, i) => html`<span key=${i} style=${{ display: "flex" }}>${i === 0 || sol ? html`<span class="box"><span class=${i ? "sol" : ""}>${i}</span></span><span class="box"><span class=${i ? "sol" : ""}>${10 - i}</span></span>` : html`<span class="box"></span><span class="box"></span>`}</span>`)}</div><p class="small">Tipp: Wenn links eins mehr wird, wird rechts eins weniger.</p>`)}`),
+  m4: (sol, m) => Plan(m, sol, "Plus und minus mit Plättchen", {
+    "Lernziel": "Die Kinder verstehen Addition als Hinzufügen und Subtraktion als Wegnehmen und notieren passende Aufgaben bis 10.",
+    "Voraussetzung": "Sicheres Zählen und Zerlegen bis 10; Zeichen + und – sind bekannt oder werden eingeführt.",
+    "Materialliste": ["Wendeplättchen (je Kind 10)", "Zehnerstreifen", "Rechengeschichten-Bildkarten", "Heft oder Arbeitsblatt"],
+    "Einstieg (10 Minuten)": ["Rechengeschichte spielen: 4 Kinder vorne, 2 kommen dazu.", "Aufgabe 4 + 2 = 6 notieren; dann 2 gehen weg (6 – 2 = 4)."],
+    "Arbeitsphase (25 Minuten)": ["Partnerarbeit: legen, dazulegen oder wegnehmen, Aufgabe notieren.", "Bildkarten: Rechengeschichte erzählen und mit Plättchen nachlegen.", "Beobachten: zählen die Kinder alles ab oder rechnen sie weiter?"],
+    "Abschluss (10 Minuten)": ["Zwei Kinder stellen ihre Rechengeschichte vor.", "Blitzrechnen: 5 + 1, 5 – 1, 3 + 3."],
+    "Differenzierung": ["Basis: Aufgaben bis 5, Zehnerstreifen als Hilfe.", "Standard: Aufgaben bis 10 mit Notation.", "Erweitert: Umkehraufgaben finden und eigene Aufgaben erfinden."] }),
+  m5: (sol, m) => {
+    const S = { Kreis: "●", Dreieck: "▲", Quadrat: "■", Rechteck: "▬" };
+    const layout = ["Dreieck", "Kreis", "Quadrat", "Dreieck", "Rechteck", "Kreis", "Dreieck", "Rechteck", "Quadrat", "Kreis", "Dreieck", "Rechteck"];
+    if (sol) return Sheet(m.id, sol, m, "Formen und Muster", html`<p><i>Formative Lernstandskontrolle – keine amtlich vorgegebene Prüfung.</i></p>
+      <div><h3>Lösungen</h3><ul><li>Aufgabe 1: 4 Dreiecke.</li><li>Aufgabe 2, Reihe 1: Quadrat, Kreis.</li><li>Aufgabe 2, Reihe 2: Dreieck, Kreis.</li><li>Aufgabe 3: individuell; Muster wiederholt sich mindestens zweimal.</li></ul></div>
+      <div><h3>Beobachtungshinweise</h3><ul><li>Unterscheidet das Kind Dreieck, Quadrat, Rechteck und Kreis sicher?</li><li>Kann es die Regel des Musters in Worten beschreiben?</li><li>Förderidee: Formen legen; Muster klatschen und stampfen.</li></ul></div>`, false);
+    return Sheet(m.id, sol, m, "Formen und Muster", html`
+      ${Task("Aufgabe 1", 1, "Male alle Dreiecke an. Wie viele Dreiecke sind es?", html`<div style=${{ display: "grid", gridTemplateColumns: "repeat(6, 44px)", gap: "8px", fontSize: "2rem" }}>${layout.map((k, i) => html`<span key=${i} style=${{ color: "transparent", WebkitTextStroke: "2px #222" }} aria-label=${k}>${S[k]}</span>`)}</div><p>Es sind ${Box(false)} Dreiecke.</p>`)}
+      ${Task("Aufgabe 2", 2, "Setze das Muster fort. Zeichne die nächsten zwei Formen.", html`${[["Kreis", "Quadrat", "Kreis", "Quadrat", "Kreis"], ["Dreieck", "Dreieck", "Kreis", "Dreieck", "Dreieck"]].map((r, i) => html`<p key=${i} style=${{ fontSize: "2rem", letterSpacing: "10px" }}>${r.map(k => S[k]).join(" ")} <span class="box"></span> <span class="box"></span></p>`)}`)}
+      ${Task("Aufgabe 3", 3, "Erfinde ein eigenes Muster mit zwei Formen.", html`<div style=${{ border: "1.5px solid #222", height: "70px" }}></div>`)}`);
+  },
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
+</script>
